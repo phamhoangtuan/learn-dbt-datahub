@@ -1,0 +1,23 @@
+services:
+  snowflake-emulator:
+    image: ghcr.io/nnnkkk7/snowflake-emulator:latest
+    expose:
+      - "8080"
+    volumes:
+      - snowflake-data:/data
+    environment:
+      - DB_PATH=/data/snowflake.db
+
+  snowflake-proxy:
+    image: python:3.10-slim
+    ports:
+      - "8080:8081"
+    volumes:
+      - ./snowflake_proxy.py:/app/snowflake_proxy.py:ro
+    command: python /app/snowflake_proxy.py
+    depends_on:
+      snowflake-emulator:
+        condition: service_started
+
+volumes:
+  snowflake-data:

@@ -1,0 +1,16 @@
+medallion_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: local
+      user: test
+      password: test
+      role: test
+      warehouse: test
+      database: BANK_DB
+      schema: RAW
+      host: localhost
+      port: 8080
+      protocol: http
+      threads: 1
