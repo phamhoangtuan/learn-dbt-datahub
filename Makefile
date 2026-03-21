@@ -39,10 +39,10 @@ dbt-debug:  ## Verify dbt → Snowflake Emulator connection
 # ── Pipeline (Phase 2+) ───────────────────────────────────────────────────────
 
 generate:  ## Generate synthetic banking events (Phase 2)
-	uv run python scripts/generate_events.py
+	PYTHONPATH=. uv run python scripts/generate_events.py
 
 load:  ## Load events into Snowflake Emulator Bronze layer (Phase 2)
-	uv run python scripts/load_to_emulator.py
+	PYTHONPATH=. uv run python scripts/load_to_emulator.py
 
 transform:  ## Run dbt models (Phase 4)
 	cd dbt_project && uv run dbt build --profiles-dir .

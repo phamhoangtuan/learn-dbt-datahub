@@ -5,6 +5,7 @@ Fixes emulator compatibility issues with snowflake-connector-python 3.x:
 1. Decompresses gzip-encoded request bodies.
 2. Injects missing session parameters with correct Python types.
 3. Injects missing column metadata fields (length, precision, scale) in query responses.
+4. Injects a DDL rowtype/rowSet when the emulator omits them (DDL statements).
 """
 import gzip
 import http.server
@@ -73,16 +74,49 @@ def _fix_login_response(body_bytes: bytes) -> bytes:
     return json.dumps(obj).encode()
 
 
+_DDL_STATUS_COL = {
+    "name": "status",
+    "type": "text",
+    "nullable": False,
+    "length": 16777216,
+    "byteLength": None,
+    "precision": None,
+    "scale": None,
+    "extTypeName": "",
+}
+
+
 def _fix_query_response(body_bytes: bytes) -> bytes:
-    """Inject missing column metadata fields that connector 3.x requires."""
+    """Inject missing column metadata fields that connector 3.x requires.
+
+    Also synthesises a DDL-style rowtype/rowSet when the emulator omits them
+    (e.g. for CREATE / DROP / ALTER statements).
+    """
     try:
         obj = json.loads(body_bytes)
     except (json.JSONDecodeError, UnicodeDecodeError):
         return body_bytes
 
-    rowtype = obj.get("data", {}).get("rowtype")
-    if not isinstance(rowtype, list):
+    data = obj.get("data")
+    if not isinstance(data, dict):
         return body_bytes
+
+    rowtype = data.get("rowtype")
+    if not isinstance(rowtype, list):
+        # DDL or other statement that returned no rowtype — synthesise one.
+        data["rowtype"] = [_DDL_STATUS_COL]
+        data.setdefault("rowset", [["Statement executed successfully."]])
+        data.setdefault("total", 1)
+        data.setdefault("returned", 1)
+        return json.dumps(obj).encode()
+
+    # DDL responses sometimes return rowtype=[] with no rowset — synthesise.
+    if not rowtype and not data.get("rowset"):
+        data["rowtype"] = [_DDL_STATUS_COL]
+        data["rowset"] = [["Statement executed successfully."]]
+        data.setdefault("total", 1)
+        data.setdefault("returned", 1)
+        return json.dumps(obj).encode()
 
     for col in rowtype:
         col.setdefault("length", None)

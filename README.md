@@ -21,14 +21,16 @@ Build a complete data pipeline using **DataHub**, **dbt**, and **Snowflake Emula
 - [x] **Python Env**: `uv` + Python 3.10, packages: `dbt-snowflake 1.9.4`, `faker`, `acryl-datahub`, `polars`, `duckdb`.
 - [x] **dbt connection verified**: `make dbt-debug` → All checks passed.
 
-### Phase 2: Data Generation & Ingestion (DAMA: Data Integration)
+### Phase 2: Data Generation & Ingestion (DAMA: Data Integration) ✅
 **Goal**: Simulate a banking system generating "stream" data.
-- [ ] **Generator Script**: Create `generate_events.py`.
+- [x] **Generator Script**: `scripts/generate_events.py` (`ingestion/generator.py`).
     - **Entities**: Accounts (Creation, Updates), Transactions (Credit, Debit, Transfer).
     - **Format**: JSONL (Newline Delimited JSON) to simulate stream logs.
-    - **Output**: Writes to `data/landing_zone/`.
-- [ ] **Ingestion Logic**:
-    - Since we are using `snowflake-emulator` (DuckDB backend), we will implement a "Loader" script that mimics `COPY INTO` or uses `INSERT` statements to load JSONL files into the "Bronze" layer (Raw Tables).
+    - **Output**: Writes to `data/landing_zone/` (62 account events + 200 transaction events).
+- [x] **Ingestion Logic**: `scripts/load_to_emulator.py` (`ingestion/loader.py`).
+    - Loads JSONL → `ACCOUNTS_RAW` (TEXT column) and `TRANSACTIONS_RAW` (TEXT column) via `INSERT INTO ... VALUES (...)`.
+    - Emulator note: uses `TEXT` instead of `VARIANT` (DuckDB-backed); no `PARSE_JSON` / `COMMIT` support.
+- [x] **Unit tests**: 12 tests in `tests/` (all green).
 
 ### Phase 3: Architecture & Modeling (DAMA: Data Architecture & Modeling)
 **Goal**: Define the architectural layers and business logic.

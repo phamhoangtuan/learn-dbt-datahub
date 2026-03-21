@@ -12,3 +12,6 @@ dependencies = [
     "polars>=1.0.0",
     "snowflake-connector-python>=3.13.1,<4.0.0",
 ]
+
+[dependency-groups]
+dev = ["pytest>=8.0.0"]
