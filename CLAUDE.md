@@ -18,7 +18,7 @@ make datahub-up     # Start DataHub separately (takes ~60s, UI at localhost:9002
 
 ### Infrastructure
 ```bash
-make infra-up       # Start Snowflake Emulator (localhost:8080)
+make infra-up       # Start Snowflake Emulator (localhost:8082)
 make infra-down     # Stop Snowflake Emulator
 make infra-logs     # Tail emulator logs
 ```
@@ -80,7 +80,7 @@ tests/              # Python unit/integration tests (Phase 2+)
 - All Python/dbt commands use **`uv run`** — never activate `.venv` manually
 - **Python 3.10** is required — snowflake-connector-python auth fails on 3.13 with the emulator
 - **dbt-snowflake pinned to `>=1.9.4,<1.10.0`** — 1.10+ requires connector 4.x which the emulator rejects
-- **Snowflake proxy sidecar** (`infrastructure/snowflake_proxy.py`): sits on port 8080 in front of the emulator. Fixes connector 3.x ↔ emulator bugs: (1) decompresses gzip bodies, (2) injects session params with correct Python types, (3) synthesises `rowtype`/`rowset` for DDL responses (emulator returns `rowtype: []` without `rowset`, causing `len(None)` in connector). Restarts with `make infra-down && make infra-up`.
+- **Snowflake proxy sidecar** (`infrastructure/snowflake_proxy.py`): listens on host port 8082 (container port 8081) in front of the emulator. Fixes connector 3.x ↔ emulator bugs: (1) decompresses gzip bodies, (2) injects session params with correct Python types, (3) synthesises `rowtype`/`rowset` for DDL responses (emulator returns `rowtype: []` without `rowset`, causing `len(None)` in connector). Restarts with `make infra-down && make infra-up`.
 - The emulator uses `protocol: http` — dbt and the connector must not enforce TLS
 - **Emulator type limitations**: Bronze tables use `TEXT` (not `VARIANT`) — DuckDB backend doesn't support Snowflake's `VARIANT`, `OBJECT`, or `JSONB` types. JSON data stored as text strings.
 - **Emulator SQL limitations**: no `CREATE DATABASE`, no three-part names (`DB.SCHEMA.TABLE`), no `PARSE_JSON()`, no explicit `COMMIT`. Use unqualified table names (session context is `BANK_DB.RAW`). Use `INSERT INTO t (col) VALUES ('...')` for JSON rows.
@@ -89,4 +89,5 @@ tests/              # Python unit/integration tests (Phase 2+)
 - `dbt_project/profiles.yml` is checked in; always pass `--profiles-dir .` from inside `dbt_project/`
 - DataHub is started separately via `make datahub-up` (`datahub docker quickstart`), not in docker-compose.yml
 - **Rancher Desktop socket**: The host uses Rancher Desktop; Docker socket is at `~/.rd/docker.sock` (not `/var/run/docker.sock`). All `datahub` CLI calls in the Makefile set `DOCKER_HOST=unix://$(HOME)/.rd/docker.sock` to fix Python docker SDK detection.
+- **Port layout**: Snowflake Emulator proxy → host port **8082** (container 8081 → emulator 8080). DataHub GMS → port **8080**. No conflict; both services can run simultaneously.
 - Use **Polars** (not pandas) for all DataFrame operations: `import polars as pl`

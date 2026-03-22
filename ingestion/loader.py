@@ -6,7 +6,7 @@ import snowflake.connector
 
 _DEFAULTS: dict[str, object] = {
     "host": "localhost",
-    "port": 8080,
+    "port": 8082,
     "user": "test",
     "password": "test",
     "database": "BANK_DB",

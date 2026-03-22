@@ -14,7 +14,7 @@ sync:  ## Install Python dependencies via uv
 
 # ── Snowflake Emulator ────────────────────────────────────────────────────────
 
-infra-up:  ## Start Snowflake Emulator (DuckDB-backed, localhost:8080)
+infra-up:  ## Start Snowflake Emulator (DuckDB-backed, localhost:8082)
 	docker compose -f infrastructure/docker-compose.yml up -d
 
 infra-down:  ## Stop Snowflake Emulator
@@ -60,22 +60,15 @@ run:  ## Run full data pipeline: generate → load → transform (requires: make
 	$(MAKE) load
 	$(MAKE) transform
 
-run-full:  ## Full pipeline + governance: manages both services automatically
-	@echo "=== Ensuring port 8080 is free (stopping DataHub if running) ==="
-	-$(MAKE) datahub-down 2>/dev/null || true
-	@sleep 5
-	@echo "=== Step 1: Starting Snowflake Emulator ==="
+run-full:  ## Full pipeline + governance (requires: make datahub-up running on :8080)
+	@echo "=== Step 1: Starting Snowflake Emulator (port 8082) ==="
 	$(MAKE) infra-up
 	@sleep 3
 	@echo "=== Steps 2-4: Running data pipeline ==="
 	$(MAKE) run
-	@echo "=== Step 5: Stopping Snowflake Emulator (freeing port 8080) ==="
+	@echo "=== Step 5: Stopping Snowflake Emulator ==="
 	$(MAKE) infra-down
-	@sleep 3
-	@echo "=== Step 6: Starting DataHub (~60s to initialize) ==="
-	$(MAKE) datahub-up
-	@sleep 60
-	@echo "=== Step 7: Ingesting dbt metadata ==="
+	@echo "=== Step 6: Ingesting dbt metadata into DataHub ==="
 	$(MAKE) datahub-ingest
 	@echo ""
 	@echo "Done. Open http://localhost:9002 to explore lineage."

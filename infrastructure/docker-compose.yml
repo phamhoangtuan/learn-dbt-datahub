@@ -11,7 +11,7 @@ services:
   snowflake-proxy:
     image: python:3.10-slim
     ports:
-      - "8080:8081"
+      - "8082:8081"
     volumes:
       - ./snowflake_proxy.py:/app/snowflake_proxy.py:ro
     command: python /app/snowflake_proxy.py
