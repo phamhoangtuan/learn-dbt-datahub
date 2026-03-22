@@ -26,10 +26,10 @@ infra-logs:  ## Tail Snowflake Emulator logs
 # ── DataHub ───────────────────────────────────────────────────────────────────
 
 datahub-up:  ## Start DataHub via acryl-datahub quickstart (UI at localhost:9002)
-	uv run datahub docker quickstart
+	DOCKER_HOST=unix://$(HOME)/.rd/docker.sock uv run datahub docker quickstart
 
 datahub-down:  ## Stop DataHub
-	uv run datahub docker quickstart --stop
+	DOCKER_HOST=unix://$(HOME)/.rd/docker.sock uv run datahub docker quickstart --stop
 
 # ── dbt ───────────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ transform:  ## Run dbt models (Phase 4)
 
 datahub-ingest:  ## Ingest dbt metadata into DataHub (requires: make datahub-up)
 	cd dbt_project && uv run dbt docs generate --profiles-dir .
-	uv run datahub ingest -c infrastructure/datahub_dbt_ingestion.yml
+	DOCKER_HOST=unix://$(HOME)/.rd/docker.sock uv run datahub ingest -c infrastructure/datahub_dbt_ingestion.yml
 
 # ── Orchestration ─────────────────────────────────────────────────────────────
 

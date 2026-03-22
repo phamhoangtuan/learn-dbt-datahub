@@ -88,4 +88,5 @@ tests/              # Python unit/integration tests (Phase 2+)
 - Silver models (Phase 4) must use DuckDB JSON extraction syntax (`data->>'field'` or `json_extract_string(data, '$.field')`) instead of Snowflake's `data:field::type`
 - `dbt_project/profiles.yml` is checked in; always pass `--profiles-dir .` from inside `dbt_project/`
 - DataHub is started separately via `make datahub-up` (`datahub docker quickstart`), not in docker-compose.yml
+- **Rancher Desktop socket**: The host uses Rancher Desktop; Docker socket is at `~/.rd/docker.sock` (not `/var/run/docker.sock`). All `datahub` CLI calls in the Makefile set `DOCKER_HOST=unix://$(HOME)/.rd/docker.sock` to fix Python docker SDK detection.
 - Use **Polars** (not pandas) for all DataFrame operations: `import polars as pl`
