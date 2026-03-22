@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "acryl-datahub[datahub-rest]>=1.4.0.9",
+    "acryl-datahub[datahub-rest,dbt]>=1.4.0.9",
     "dbt-snowflake>=1.9.4,<1.10.0",
     "duckdb>=1.5.0",
     "faker>=40.11.0",

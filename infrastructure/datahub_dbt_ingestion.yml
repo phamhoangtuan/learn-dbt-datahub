@@ -11,13 +11,13 @@
 # Run via: make datahub-ingest
 
 source:
-  type: dbt-core
+  type: dbt
   config:
     manifest_path: "dbt_project/target/manifest.json"
-    run_results_path: "dbt_project/target/run_results.json"
+    run_results_paths:
+      - "dbt_project/target/run_results.json"
     target_platform: "snowflake"
     include_column_lineage: true
-    include_test_results: true
 
 sink:
   type: datahub-rest
