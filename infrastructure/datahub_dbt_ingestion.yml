@@ -1,0 +1,23 @@
+# DataHub ingestion recipe for dbt Medallion Pipeline
+# Ingests metadata (models, lineage, tests) from local dbt artifacts into DataHub.
+#
+# Prerequisites:
+#   - DataHub running: make datahub-up  (UI at localhost:9002, GMS at localhost:8080)
+#   - dbt artifacts present: make transform  (generates target/manifest.json etc.)
+#
+# Run via: make datahub-ingest
+
+source:
+  type: dbt-core
+  config:
+    manifest_path: "dbt_project/target/manifest.json"
+    catalog_path: "dbt_project/target/catalog.json"
+    run_results_path: "dbt_project/target/run_results.json"
+    target_platform: "snowflake"
+    include_column_lineage: true
+    include_test_results: true
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"

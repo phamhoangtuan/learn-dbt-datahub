@@ -46,3 +46,33 @@ load:  ## Load events into Snowflake Emulator Bronze layer (Phase 2)
 
 transform:  ## Run dbt models (Phase 4)
 	cd dbt_project && uv run dbt build --profiles-dir .
+
+# ── Governance ────────────────────────────────────────────────────────────────
+
+datahub-ingest:  ## Ingest dbt metadata into DataHub (requires: make datahub-up)
+	cd dbt_project && uv run dbt docs generate --profiles-dir .
+	uv run datahub ingest -c infrastructure/datahub_dbt_ingestion.yml
+
+# ── Orchestration ─────────────────────────────────────────────────────────────
+
+run:  ## Run full data pipeline: generate → load → transform (requires: make infra-up)
+	$(MAKE) generate
+	$(MAKE) load
+	$(MAKE) transform
+
+run-full:  ## Full pipeline + governance: starts/stops services automatically
+	@echo "=== Step 1: Starting Snowflake Emulator ==="
+	$(MAKE) infra-up
+	@sleep 3
+	@echo "=== Steps 2-4: Running data pipeline ==="
+	$(MAKE) run
+	@echo "=== Step 5: Stopping Snowflake Emulator (freeing port 8080) ==="
+	$(MAKE) infra-down
+	@sleep 2
+	@echo "=== Step 6: Starting DataHub (~60s to initialize) ==="
+	$(MAKE) datahub-up
+	@sleep 60
+	@echo "=== Step 7: Ingesting dbt metadata ==="
+	$(MAKE) datahub-ingest
+	@echo ""
+	@echo "Done. Open http://localhost:9002 to explore lineage."
