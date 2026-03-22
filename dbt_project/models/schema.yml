@@ -1,0 +1,171 @@
+version: 2
+
+models:
+  # ─── Bronze Layer ────────────────────────────────────────────────────────────
+  - name: bronze_accounts_raw
+    description: >
+      Raw account events ingested from the landing zone JSONL files.
+      Each row is a single JSON string stored in the TEXT column `data`.
+    columns:
+      - name: data
+        description: Raw JSON event string
+        tests:
+          - not_null
+
+  - name: bronze_transactions_raw
+    description: >
+      Raw transaction events ingested from the landing zone JSONL files.
+      Each row is a single JSON string stored in the TEXT column `data`.
+    columns:
+      - name: data
+        description: Raw JSON event string
+        tests:
+          - not_null
+
+  # ─── Silver Layer ────────────────────────────────────────────────────────────
+  - name: silver_accounts_clean
+    description: >
+      Parsed and type-cast account entities. Deduplicated to one row per
+      account_id (latest event wins). Represents the Clean Architecture
+      "Accounts" entity with validated fields.
+    columns:
+      - name: account_id
+        description: Unique account identifier
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Owning customer identifier
+        tests:
+          - not_null
+      - name: account_type
+        description: Type of account
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CHECKING', 'SAVINGS', 'CREDIT', 'INVESTMENT']
+      - name: status
+        description: Current account status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ACTIVE', 'INACTIVE', 'FROZEN']
+      - name: balance
+        description: Current account balance
+        tests:
+          - not_null
+      - name: currency
+        description: Account currency code
+        tests:
+          - not_null
+      - name: event_timestamp
+        description: Timestamp of the latest account event
+        tests:
+          - not_null
+
+  - name: silver_transactions_clean
+    description: >
+      Parsed and type-cast transaction events. Each row is one immutable
+      transaction event. Includes is_suspicious flag from the business
+      rules macro (Entities layer).
+    columns:
+      - name: transaction_id
+        description: Unique transaction identifier
+        tests:
+          - not_null
+      - name: account_id
+        description: Source account for the transaction
+        tests:
+          - not_null
+      - name: event_id
+        description: Source event identifier
+        tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CREDIT', 'DEBIT', 'TRANSFER']
+      - name: amount
+        description: Transaction amount
+        tests:
+          - not_null
+      - name: currency
+        description: Transaction currency code
+        tests:
+          - not_null
+      - name: status
+        description: Transaction status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['COMPLETED', 'PENDING', 'FAILED']
+      - name: is_suspicious
+        description: >
+          Business rule flag: TRUE when amount > 10000 AND status = 'COMPLETED'
+        tests:
+          - not_null
+      - name: event_timestamp
+        description: Timestamp of the transaction event
+        tests:
+          - not_null
+
+  # ─── Gold Layer ──────────────────────────────────────────────────────────────
+  - name: gold_daily_balance_snapshot
+    description: >
+      Daily balance snapshot per account. Shows the latest known balance
+      for each account on each day it had activity. Star schema fact table
+      for balance reporting.
+    columns:
+      - name: snapshot_date
+        description: Date of the balance snapshot (truncated to day)
+        tests:
+          - not_null
+      - name: account_id
+        description: Account identifier
+        tests:
+          - not_null
+      - name: account_type
+        description: Account type
+        tests:
+          - not_null
+      - name: balance
+        description: Account balance at end of day
+        tests:
+          - not_null
+      - name: currency
+        description: Account currency
+        tests:
+          - not_null
+
+  - name: gold_transaction_summary
+    description: >
+      Daily transaction summary per account. Aggregates credits, debits,
+      total counts, and suspicious transaction counts. Used for BI reporting
+      and anomaly detection dashboards.
+    columns:
+      - name: summary_date
+        description: Date of the summary (truncated to day)
+        tests:
+          - not_null
+      - name: account_id
+        description: Account identifier
+        tests:
+          - not_null
+      - name: transaction_count
+        description: Total number of transactions on this day
+        tests:
+          - not_null
+      - name: total_credit
+        description: Sum of all CREDIT transaction amounts
+        tests:
+          - not_null
+      - name: total_debit
+        description: Sum of all DEBIT transaction amounts
+        tests:
+          - not_null
+      - name: suspicious_count
+        description: Number of transactions flagged as suspicious
+        tests:
+          - not_null

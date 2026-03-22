@@ -32,26 +32,26 @@ Build a complete data pipeline using **DataHub**, **dbt**, and **Snowflake Emula
     - Emulator note: uses `TEXT` instead of `VARIANT` (DuckDB-backed); no `PARSE_JSON` / `COMMIT` support.
 - [x] **Unit tests**: 12 tests in `tests/` (all green).
 
-### Phase 3: Architecture & Modeling (DAMA: Data Architecture & Modeling)
+### Phase 3: Architecture & Modeling (DAMA: Data Architecture & Modeling) ✅
 **Goal**: Define the architectural layers and business logic.
-- [ ] **Clean Architecture Design**:
-    - **Entities (Inner Layer)**: Define core business rules (e.g., `is_suspicious_transaction`) as dbt Macros or UDFs. Independent of the pipeline logic.
-    - **Use Cases (Middle Layer)**: The dbt models transforming data (e.g., `process_daily_transactions`).
-    - **Adapters (Outer Layer)**:
-        - **In**: Staging models (`stg_transactions`) normalizing raw JSON.
-        - **Out**: Gold models (`daily_balance_snapshot`) serving BI.
-- [ ] **Medallion Layers**:
-    - **Bronze**: Raw ingestion (Variant/JSON columns).
-    - **Silver**: Parsed, type-cast, deduplicated, and enriched data (Clean Entities).
-    - **Gold**: Business-level aggregates (Dimensional Models / Star Schema).
+- [x] **Clean Architecture Design**:
+    - **Entities (Inner Layer)**: `is_suspicious_transaction(amount, status)` macro — pure business rule (amount > 10000 AND status = 'COMPLETED').
+    - **Use Cases (Middle Layer)**: Silver dbt models execute transformations (parse JSON, cast types, deduplicate).
+    - **Adapters (Outer Layer)**: Bronze models normalize raw TEXT JSON in; Gold models serve BI-ready aggregates out.
+- [x] **Medallion Layers**:
+    - **Bronze**: `bronze_accounts_raw`, `bronze_transactions_raw` — raw TEXT selects with escape-fix.
+    - **Silver**: `silver_accounts_clean` (deduplicated by latest event), `silver_transactions_clean` (parsed + `is_suspicious` flag).
+    - **Gold**: `gold_daily_balance_snapshot` (latest balance per account per day), `gold_transaction_summary` (daily aggregates per account).
+- [x] **dbt Tests**: 34 schema tests (not_null, unique, accepted_values) — all green.
+- [x] **Proxy fixes**: Emulator comment-stripping (DuckDB rejects SQL prefixed with `/* */` comments); NUMBER→fixed type normalization for `count(*)` results.
 
-### Phase 4: Implementation (DAMA: Data Quality & Interoperability)
+### Phase 4: Implementation (DAMA: Data Quality & Interoperability) ✅
 **Goal**: Write the dbt code and pipelines.
-- [ ] **dbt Project Setup**: `dbt init`.
-- [ ] **Bronze Layer**: Models to select from raw tables.
-- [ ] **Silver Layer**: Logic to parse JSON, handle duplicates, enforce referential integrity (Accounts <-> Transactions).
-- [ ] **Gold Layer**: Aggregations for reporting.
-- [ ] **Testing**: Add `dbt` tests (unique, not_null, accepted_values) and `dbt-expectations` for data quality.
+- [x] **dbt Project Setup**: `dbt init` (Phase 1), profiles.yml checked in.
+- [x] **Bronze Layer**: Models select from raw tables with JSON escape correction.
+- [x] **Silver Layer**: DuckDB `->>'field'` JSON extraction, type-casting, deduplication via `ROW_NUMBER()`.
+- [x] **Gold Layer**: `DATE_TRUNC('day', ...)` aggregations for daily snapshots and transaction summaries.
+- [x] **Testing**: 34 `dbt` tests (unique, not_null, accepted_values) — `dbt build` PASS=40 WARN=0 ERROR=0.
 
 ### Phase 5: Governance & Metadata (DAMA: Data Governance)
 **Goal**: Make the data discoverable and trustworthy.
