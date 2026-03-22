@@ -50,7 +50,6 @@ transform:  ## Run dbt models (Phase 4)
 # ── Governance ────────────────────────────────────────────────────────────────
 
 datahub-ingest:  ## Ingest dbt metadata into DataHub (requires: make datahub-up)
-	cd dbt_project && uv run dbt docs generate --profiles-dir .
 	DOCKER_HOST=unix://$(HOME)/.rd/docker.sock uv run datahub ingest -c infrastructure/datahub_dbt_ingestion.yml
 
 # ── Orchestration ─────────────────────────────────────────────────────────────

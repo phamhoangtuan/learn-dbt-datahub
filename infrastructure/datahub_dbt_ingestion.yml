@@ -5,13 +5,15 @@
 #   - DataHub running: make datahub-up  (UI at localhost:9002, GMS at localhost:8080)
 #   - dbt artifacts present: make transform  (generates target/manifest.json etc.)
 #
+# Note: catalog.json is omitted — dbt docs generate queries information_schema
+# which the DuckDB-backed emulator does not support.
+#
 # Run via: make datahub-ingest
 
 source:
   type: dbt-core
   config:
     manifest_path: "dbt_project/target/manifest.json"
-    catalog_path: "dbt_project/target/catalog.json"
     run_results_path: "dbt_project/target/run_results.json"
     target_platform: "snowflake"
     include_column_lineage: true
