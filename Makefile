@@ -60,15 +60,7 @@ run:  ## Run full data pipeline: generate → load → transform (requires: make
 	$(MAKE) load
 	$(MAKE) transform
 
-run-full:  ## Full pipeline + governance (requires: make datahub-up running on :8080)
-	@echo "=== Step 1: Starting Snowflake Emulator (port 8082) ==="
-	$(MAKE) infra-up
-	@sleep 3
-	@echo "=== Steps 2-4: Running data pipeline ==="
+run-full:  ## Full pipeline + governance (requires: make infra-up + make datahub-up)
 	$(MAKE) run
-	@echo "=== Step 5: Stopping Snowflake Emulator ==="
-	$(MAKE) infra-down
-	@echo "=== Step 6: Ingesting dbt metadata into DataHub ==="
 	$(MAKE) datahub-ingest
-	@echo ""
 	@echo "Done. Open http://localhost:9002 to explore lineage."
