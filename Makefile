@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup sync infra-up infra-down infra-logs dbt-debug datahub-up datahub-down
+.PHONY: help setup sync infra-up infra-down infra-logs dbt-debug datahub-up datahub-down datahub-ingest generate load transform run run-full
 
 help:  ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*##"}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -60,7 +60,7 @@ run:  ## Run full data pipeline: generate → load → transform (requires: make
 	$(MAKE) load
 	$(MAKE) transform
 
-run-full:  ## Full pipeline + governance: starts/stops services automatically
+run-full:  ## Full pipeline + governance (DataHub must already be running on port 8080)
 	@echo "=== Step 1: Starting Snowflake Emulator ==="
 	$(MAKE) infra-up
 	@sleep 3
@@ -69,10 +69,7 @@ run-full:  ## Full pipeline + governance: starts/stops services automatically
 	@echo "=== Step 5: Stopping Snowflake Emulator (freeing port 8080) ==="
 	$(MAKE) infra-down
 	@sleep 2
-	@echo "=== Step 6: Starting DataHub (~60s to initialize) ==="
-	$(MAKE) datahub-up
-	@sleep 60
-	@echo "=== Step 7: Ingesting dbt metadata ==="
+	@echo "=== Step 6: Ingesting dbt metadata into DataHub ==="
 	$(MAKE) datahub-ingest
 	@echo ""
 	@echo "Done. Open http://localhost:9002 to explore lineage."
